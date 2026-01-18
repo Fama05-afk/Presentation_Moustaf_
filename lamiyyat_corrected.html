@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <title>Lāmiyyat al-'Arab — Restitution fidèle</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+      min-height: 100vh;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      overflow: hidden;
+    }
+    .container {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      position: relative;
+    }
+    .slide {
+      background: white;
+      border-radius: 24px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      max-width: 1100px;
+      width: 100%;
+      min-height: 650px;
+      display: none;
+      flex-direction: column;
+      opacity: 0;
+      transform: translateX(50px);
+      transition: opacity 0.4s, transform 0.4s;
+    }
+    .slide.active {
+      display: flex;
+      opacity: 1;
+      transform: translateX(0);
+    }
+    .slide-header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      padding: 24px 32px;
+      color: white;
+      border-radius: 24px 24px 0 0;
+    }
+    .slide-header h1 { font-size: 28px; font-weight: 800; margin-bottom: 8px; }
+    .slide-header p { opacity: 0.9; font-size: 15px; }
+    .slide-content {
+      padding: 40px 32px;
+      flex: 1;
+      overflow-y: auto;
+    }
+    .progress-bar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 6px;
+      background: rgba(255,255,255,0.2);
+      z-index: 1000;
+    }
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #10b981 0%, #059669 100%);
+      transition: width 0.3s;
+    }
+    .controls {
+      position: fixed;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 16px;
+      z-index: 1000;
+    }
+    .btn {
+      padding: 14px 28px;
+      border: none;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: inherit;
+      background: white;
+      color: #667eea;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    }
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+    }
+    .btn:disabled {
+      opacity: 0.3;
+      cursor: not-allowed;
+      transform: none;
+    }
+    .slide-number {
+      position: fixed;
+      top: 30px;
+      right: 30px;
+      background: rgba(255,255,255,0.95);
+      padding: 10px 20px;
+      border-radius: 999px;
+      font-weight: 700;
+      color: #667eea;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+      z-index: 1000;
+    }
+    .arabic-text {
+      font-size: 24px;
+      line-height: 1.9;
+      text-align: right;
+      direction: rtl;
+      color: #1f2937;
+      margin: 16px 0;
+      padding: 20px;
+      background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+      border-radius: 16px;
+      border-right: 5px solid #667eea;
+    }
+    .box {
+      background: #f9fafb;
+      padding: 20px;
+      border-radius: 12px;
+      border-left: 4px solid #10b981;
+      margin: 16px 0;
+    }
+    .box h2 {
+      font-size: 18px;
+      color: #667eea;
+      margin-bottom: 12px;
+      font-weight: 700;
+    }
+    .box p {
+      font-size: 16px;
+      line-height: 1.7;
+      color: #374151;
+      margin: 8px 0;
+    }
+    .box ul {
+      list-style: none;
+      padding: 0;
+    }
+    .box li {
+      padding: 8px 0;
+      color: #4b5563;
+      font-size: 15px;
+      line-height: 1.6;
+    }
+    .box li:before {
+      content: "• ";
+      color: #10b981;
+      font-weight: 900;
+      font-size: 18px;
+      margin-right: 8px;
+    }
+    .wolof-box {
+      background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+      padding: 20px;
+      border-radius: 12px;
+      border-left: 4px solid #f59e0b;
+      margin: 16px 0;
+    }
+    .wolof-box p {
+      font-size: 16px;
+      line-height: 1.8;
+      color: #78350f;
+    }
+    .fullscreen-btn {
+      position: fixed;
+      top: 30px;
+      left: 30px;
+      background: rgba(255,255,255,0.95);
+      border: none;
+      padding: 12px;
+      border-radius: 12px;
+      cursor: pointer;
+      font-size: 20px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+      z-index: 1000;
+      transition: all 0.2s;
+    }
+    .fullscreen-btn:hover {
+      transform: scale(1.1);
+    }
+    .hint {
+      position: fixed;
+      bottom: 90px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: white;
+      font-size: 13px;
+      opacity: 0.8;
+      z-index: 1000;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    }
+    @media (max-width: 768px) {
+      .arabic-text { font-size: 20px; }
+      .controls { bottom: 20px; }
+      .btn { padding: 12px 20px; font-size: 14px; }
+      .hint { bottom: 70px; font-size: 12px; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="progress-bar">
+  <div class="progress-fill" id="progressBar"></div>
+</div>
+
+<div class="slide-number" id="slideNumber"></div>
+
+<button class="fullscreen-btn" onclick="toggleFullscreen()" title="Mode plein écran">⛶</button>
+
+<div class="container">
+
+  <!-- SLIDE 1: COUVERTURE -->
+  <div class="slide active">
+    <div class="slide-header">
+      <h1>Lāmiyyat al-'Arab</h1>
+      <p>Al-Shanfarā (mort vers 70 avant l'Hégire)</p>
+    </div>
+    <div class="slide-content" style="display:flex; flex-direction:column; justify-content:center; align-items:center; text-align:center;">
+      <div style="font-size: 80px; margin-bottom: 30px;">🏜️</div>
+      <h2 style="font-size: 48px; color: #667eea; margin-bottom: 30px; font-weight: 800;">لامية العرب</h2>
+      <p style="font-size: 28px; color: #1f2937; font-weight: 600; margin-bottom: 50px;">Al-Shanfarā</p>
+      <p style="font-size: 20px; color: #6b7280;">Poète arabe préislamique</p>
+      <p style="font-size: 18px; color: #6b7280; margin-top: 10px;">(mort vers 70 avant l'Hégire)</p>
+    </div>
+  </div>
+
+  <!-- SLIDE 2: CONTEXTE ÉPOQUE PRÉISLAMIQUE -->
+  <div class="slide">
+    <div class="slide-header">
+      <h1>1. Contexte historique et culturel</h1>
+      <p>De l'époque préislamique</p>
+    </div>
+    <div class="slide-content">
+      <div class="box">
+        <ul>
+          <li>Organisation tribale de la société arabe</li>
+          <li>Importance du lignage et de l'honneur</li>
+          <li>Valeurs dominantes : courage, générosité, solidarité</li>
+          <li>Rôle central de la poésie dans la société</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 3: QUI EST AL-SHANFARĀ -->
+  <div class="slide">
+    <div class="slide-header">
+      <h1>2. Qui est Al-Shanfarā ?</h1>
+      <p>Portrait du poète</p>
+    </div>
+    <div class="slide-content">
+      <div class="box">
+        <ul>
+          <li>Poète arabe préislamique (al-Jāhiliyya)</li>
+          <li>Appartient au courant des ṣa'ālīk (poètes marginaux et rebelles)</li>
+          <li>Originaire de la tribu al-Azd, mais rejeté par l'ordre tribal</li>
+          <li>Figure de l'exil volontaire et de la rupture avec la société</li>
+          <li>Auteur de Lāmiyyat al-'Arab, poème emblématique de la poésie ancienne</li>
+          <li>Défenseur de la dignité individuelle, de la liberté et de l'endurance</li>
+          <li>Symbole du poète solitaire, fier et indomptable</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 4: CONTEXTE RAPPEL -->
+  <div class="slide">
+    <div class="slide-header">
+      <h1>3. Contexte historique et culturel</h1>
+      <p>Rappel détaillé</p>
+    </div>
+    <div class="slide-content">
+      <div class="box">
+        <ul>
+          <li>Période préislamique (al-Jāhiliyya), avant l'avènement de l'Islam</li>
+          <li>Société fondée sur l'organisation tribale (qabīla)</li>
+          <li>Importance du lignage, de l'honneur et de la solidarité tribale</li>
+          <li>Valeurs dominantes : courage, générosité, loyauté, protection du groupe</li>
+          <li>Exclusion sociale synonyme de marginalisation et d'insécurité</li>
+          <li>Rôle central de la poésie comme moyen d'expression, de mémoire et de prestige</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 5: LIEN AVEC QASIDA - TYPES D'HOMMES -->
+  <div class="slide">
+    <div class="slide-header">
+      <h1>Le lien entre la qasida de Serigne Cheikh</h1>
+      <p>Ahmad Tijane Sy</p>
+    </div>
+    <div class="slide-content">
+      <div class="box">
+        <h2>La qasida énumère les types d'hommes que le désert peut produire :</h2>
+        <ul>
+          <li>un héros (بطل) → courage et endurance</li>
+          <li>un ascète pieux (ورع زاهد) → détachement et piété</li>
+          <li>un sage ('ārif) → connaissance et bonne conduite</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 6: ENSEIGNEMENTS À TIRER -->
+  <div class="slide">
+    <div class="slide-header">
+      <h1>Les enseignements à tirer</h1>
+      <p>Leçons universelles</p>
+    </div>
+    <div class="slide-content">
+      <div class="box">
+        <h2>1_ Le désert comme école morale</h2>
+        <ul>
+          <li>Le désert n'est pas seulement un espace géographique, mais une école de formation humaine.</li>
+          <li>Il agit sur le comportement, la morale et la pensée de l'homme.</li>
+          <li>La dureté de la vie forge le caractère et purifie l'âme.</li>
+        </ul>
+      </div>
+      <div class="box" style="margin-top: 16px;">
+        <h2>2_ La vraie loyauté n'est pas forcément celle du sang</h2>
+      </div>
+      <div class="box" style="margin-top: 16px;">
+        <h2>3_ La maîtrise de soi comme valeur fondamentale</h2>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 7: TOUS LES VERS ARABES (1-5) -->
+  <div class="slide">
+    <div class="slide-header">
+      <h1>Les vers arabes (1-5)</h1>
+      <p>Lāmiyyat al-'Arab</p>
+    </div>
+    <div class="slide-content">
+      <div class="arabic-text">
+أَقِيمُوا بَنِي أُمِّي صُدُورَ مَطِيِّكُمْ ✽ فَإِنِّي إِلَى قَوْمٍ سِوَاكُمْ لَأَمْيَلُ
+      </div>
+      <div class="arabic-text">
+فَقَدْ حُمِّلَتِ الْحَاجَاتُ وَاللَّيْلُ مُقْمِرٌ ✽ وَشُدَّتْ لِطِيَّاتٍ مَطَايَا وَأَرْحُلُ
+      </div>
+      <div class="arabic-text">
+وَفِي الْأَرْضِ مَنْأًى لِلْكَرِيمِ عَنِ الْأَذَى ✽ وَفِيهَا لِمَنْ خَافَ الْقِلَى مُتَعَزَّلُ
+      </div>
+      <div class="arabic-text">
+لَعَمْرُكَ مَا بِالْأَرْضِ ضِيقٌ عَلَى امْرِئٍ ✽ سَرَى رَاغِبًا أَوْ رَاهِبًا وَهُوَ يَعْقِلُ
+      </div>
+      <div class="arabic-text">
+وَلِي دُونَكُمْ أَهْلُونَ: سِيدٌ عَمَلَّسٌ ✽ وَأَرْقَطُ زُهْلُولٌ وَعَرْفَاءُ جَيْأَلُ
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 8: VERS ARABES (6-10) -->
+  <div class="slide">
+    <div class="slide-header">
+      <h1>Les vers arabes (6-10)</h1>
+      <p>Lāmiyyat al-'Arab</p>
+    </div>
+    <div class="slide-content">
+      <div class="arabic-text">
+هُمُ الْأَهْلُ لَا مُسْتَوْدَعُ السِّرِّ ذَائِعٌ ✽ لَدَيْهِمْ وَلَا الْجَانِي بِمَا جَرَّ يُخْذَلُ
+      </div>
+      <div class="arabic-text">
+وَكُلُّ أَبِي بَاسِلٍ غَيْرَ أَنِّي ✽ إِذَا عَرَضَتْ أُولَى الطَّرَائِدِ أَبْسَلُ
+      </div>
+      <div class="arabic-text">
+وَإِنْ مُدَّتِ الْأَيْدِي إِلَى الزَّادِ لَمْ أَكُنْ ✽ بِأَعْجَلِهِمْ إِذْ أَجْشَعُ الْقَوْمِ أَعْجَلُ
+      </div>
+      <div class="arabic-text">
+وَمَا ذَاكَ إِلَّا بَسْطَةً عَنْ تَفَضُّلٍ ✽ عَلَيْهِمْ وَكَانَ الْأَفْضَلُ الْمُتَفَضِّلُ
+      </div>
+      <div class="arabic-text">
+وَإِنِّي كَفَانِي فَقْدُ مَنْ لَيْسَ جَازِيًا ✽ بِحُسْنَى وَلَا فِي قُرْبِهِ مُتَعَلَّلُ
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 9: TRADUCTION FRANÇAISE -->
+  <div class="slide">
+    <div class="slide-header">
+      <h1>Traduction en français</h1>
+      <p>Explication des vers</p>
+    </div>
+    <div class="slide-content">
+      <div class="box">
+        <p><strong>Vers 1-2 :</strong> Il s'adresse à ses « fils de ma mère » (ses frères de sang ou sa tribu maternelle) et leur ordonne de seller leurs chameaux pour partir… mais lui, il choisit de les quitter définitivement pour rejoindre « d'autres gens » (en réalité, il préfère la solitude et la nature sauvage).</p>
+      </div>
+      <div class="box">
+        <p><strong>Vers 3-4 :</strong> La nuit est claire (lune pleine = moment idéal pour voyager en secret), les besoins sont urgents → il part sans regret.</p>
+      </div>
+      <div class="box">
+        <p><strong>Vers 5-6 :</strong> La terre est vaste ; un homme digne (karīm) y trouve toujours un refuge loin des humiliations et des reproches de sa tribu.</p>
+      </div>
+      <div class="box">
+        <p><strong>Vers 7-8 :</strong> Maxime célèbre : l'intelligent ne se sent jamais prisonnier de l'espace ; il peut fuir ou chercher fortune n'importe où.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 10: TRADUCTION FRANÇAISE (SUITE) -->
+  <div class="slide">
+    <div class="slide-header">
+      <h1>Traduction en français (suite)</h1>
+      <p>Explication des vers</p>
+    </div>
+    <div class="slide-content">
+      <div class="box">
+        <p><strong>Vers 9-10 :</strong> Sa vraie « famille » n'est plus humaine : c'est le loup (symbole de force et d'endurance), le léopard (vitesse et férocité), le vautour (élévation, vue perçante). Ces animaux sauvages sont plus loyaux que les humains.</p>
+      </div>
+      <div class="box">
+        <p><strong>Vers 11-12 :</strong> Ces « parents » ne trahissent jamais un secret et ne lâchent pas un des leurs même s'il a commis une faute (contrairement aux tribus humaines qui excluent et abandonnent).</p>
+      </div>
+      <div class="box">
+        <p><strong>Vers 13-14 :</strong> Il se vante d'être le plus brave à la chasse (il prend la première proie), mais le plus généreux au partage : il laisse les autres manger d'abord, par noblesse (même s'il a très faim). C'est une marque de supériorité morale.</p>
+      </div>
+      <div class="box">
+        <p><strong>Vers final :</strong> Il se console d'avoir perdu des liens humains inutiles : ceux qui ne rendent pas les faveurs et n'apportent rien de bon.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 11: SERIGNE CHEIKH - ARABE -->
+  <div class="slide">
+    <div class="slide-header">
+      <h1>Itinéraire d'un missionnaire</h1>
+      <p>Serigne Cheikh Ahmed Tidjane Sy</p>
+    </div>
+    <div class="slide-content">
+      <div class="arabic-text">
+أَرَى لِلصَّحْرَاءِ أُسْلُوبًا يُمَكِّنُهَا مِنَ التَّصَرُّفِ فِي الأَخْلَاقِ وَالْفِكْرِ
+      </div>
+      <div class="arabic-text">
+يُبْدِي لَهَا بَطَلًا أَوْ زَاهِدًا وَرِعًا أَوْ عَارِفًا يَتَوَخَّى جَوْدَةَ السَّيْرِ
+      </div>
+      <div class="arabic-text">
+أَوْ ذَا مُرَاقَبَةٍ لَكِنَّهَا رَفَضَتْ أَنْ يَجْمَعَ الْكُلَّ إِلَّا سَيِّدَ الْبَشَرِ
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 12: SERIGNE CHEIKH - FRANÇAIS -->
+  <div class="slide">
+    <div class="slide-header">
+      <h1>Traduction en français</h1>
+      <p>Serigne Cheikh Ahmed Tidjane Sy</p>
+    </div>
+    <div class="slide-content">
+      <div class="box">
+        <p><strong>1</strong> Je vois que le désert possède une méthode (une manière d'agir) qui lui permet d'influencer / de façonner les comportements moraux et la pensée.</p>
+      </div>
+      <div class="box">
+        <p><strong>2</strong> Le désert fait apparaître (il produit) : soit un héros, soit un ascète pieux, soit un connaissant (spirituel) qui recherche l'excellence dans la conduite.</p>
+      </div>
+      <div class="box">
+        <p><strong>3</strong> Ou bien il devient un homme de "muraqaba" (vigilance intérieure) ; mais elle (la vie/le désert) a refusé que toutes ces qualités soient réunies en une seule personne sauf chez le Maître des humains (prophète).</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 13: SERIGNE CHEIKH - WOLOF -->
+  <div class="slide">
+    <div class="slide-header">
+      <h1>Traduction en Wolof</h1>
+      <p>Serigne Cheikh Ahmed Tidjane Sy</p>
+    </div>
+    <div class="slide-content">
+      <div class="wolof-box">
+        <p>Guis na désert amé ay méthode yo xamné daf kay permettre mou def ay transformations des vertus essentiel (>outils)</p>
+      </div>
+      <div class="wolof-box">
+        <p>Dieul jikko si cadre bi gueuneu bas tobbou ko si cadre bi gueun captivité xel ak xalaat</p>
+      </div>
+      <div class="wolof-box">
+        <p>- Dana produire diambar, tabax nit kou deuddou (té Yalla rek tax)</p>
+        <p style="margin-top: 8px;">am na aussi capacité youkay permettre mou produire kou am culture, ko xam ni à chaque fois amélioration continue</p>
+        <p style="margin-top: 8px;">- Am na capacité youkay permettre mou produire ko xamni foum né day bayyi xel Yalla foum tollou (fougg-lou)</p>
+      </div>
+      <div class="wolof-box">
+        <p>Waayé yi yeup moom desert bagn na dadialé ko si ben nit kassé koudoul Yonenté bi PSL</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 14: MAAM BABACAR SY -->
+  <div class="slide">
+    <div class="slide-header">
+      <h1>Maam Babacar Sy</h1>
+      <p>Les remèdes du désert</p>
+    </div>
+    <div class="slide-content">
+      <div class="arabic-text" style="font-size: 28px;">
+فَإِنَّ أَدْوِيَةَ الصَّحْرَاءِ قَدْ حُمِدَتْ وَوَقَعَ السَّمَاءُ عَلَيْهَا ذَاكَ أَنْوَاءُ
+      </div>
+      <div class="box">
+        <h2>Traduction en français</h2>
+        <p>Les remèdes du désert ont certes été loués, car le ciel y fait descendre ses pluies bénéfiques.</p>
+      </div>
+      <p style="margin-top: 30px; text-align: center; color: #6b7280; font-size: 14px;">Fin de la restitution fidèle.</p>
+    </div>
+  </div>
+
+</div>
+
+<div class="controls">
+  <button type="button" class="btn" id="prevBtn" onclick="prevSlide()">← Précédent</button>
+  <button type="button" class="btn" id="nextBtn" onclick="nextSlide()">Suivant →</button>
+</div>
+
+<div class="hint">Navigation : flèches ← → ou barre espace</div>
+
+<script>
+let currentSlide = 0;
+const slides = document.querySelectorAll('.slide');
+const totalSlides = slides.length;
+
+function updateSlide() {
+  slides.forEach((slide, index) => {
+    slide.classList.remove('active');
+    if (index === currentSlide) {
+      slide.classList.add('active');
+    }
+  });
+  
+  const progress = ((currentSlide + 1) / totalSlides) * 100;
+  document.getElementById('progressBar').style.width = progress + '%';
+  document.getElementById('slideNumber').textContent = `${currentSlide + 1} / ${totalSlides}`;
+  
+  document.getElementById('prevBtn').disabled = currentSlide === 0;
+  document.getElementById('nextBtn').disabled = currentSlide === totalSlides - 1;
+}
+
+function nextSlide() {
+  if (currentSlide < totalSlides - 1) {
+    currentSlide++;
+    updateSlide();
+  }
+}
+
+function prevSlide() {
+  if (currentSlide > 0) {
+    currentSlide--;
+    updateSlide();
+  }
+}
+
+function toggleFullscreen() {
+  if (!document.fullscreenElement) {
+    document.documentElement.requestFullscreen();
+  } else {
+    document.exitFullscreen();
+  }
+}
+
+// CORRECTION: Event listeners ajoutés UNE SEULE FOIS au chargement de la page
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'ArrowRight' || e.key === ' ') {
+    e.preventDefault();
+    nextSlide();
+  } else if (e.key === 'ArrowLeft') {
+    e.preventDefault();
+    prevSlide();
+  } else if (e.key === 'f' || e.key === 'F') {
+    toggleFullscreen();
+  } else if (e.key === 'Home') {
+    e.preventDefault();
+    currentSlide = 0;
+    updateSlide();
+  } else if (e.key === 'End') {
+    e.preventDefault();
+    currentSlide = totalSlides - 1;
+    updateSlide();
+  }
+});
+
+// Gestion des gestes tactiles (swipe) - UNE SEULE FOIS
+let touchStartX = 0;
+let touchStartY = 0;
+
+document.addEventListener('touchstart', (e) => {
+  if (!e.touches || e.touches.length === 0) return;
+  touchStartX = e.touches[0].clientX;
+  touchStartY = e.touches[0].clientY;
+}, { passive: true });
+
+document.addEventListener('touchend', (e) => {
+  if (!e.changedTouches || e.changedTouches.length === 0) return;
+  const dx = e.changedTouches[0].clientX - touchStartX;
+  const dy = e.changedTouches[0].clientY - touchStartY;
+
+  // Ignorer le scroll vertical
+  if (Math.abs(dy) > Math.abs(dx)) return;
+
+  if (dx < -40) nextSlide();     // Swipe gauche => suivant
+  else if (dx > 40) prevSlide(); // Swipe droite => précédent
+}, { passive: true });
+
+// Tap sur la slide pour aller au suivant (sauf sur les boutons) - UNE SEULE FOIS
+document.querySelector('.container')?.addEventListener('click', (e) => {
+  if (e.target.closest('button')) return;
+  nextSlide();
+});
+
+updateSlide();
+</script>
+
+</body>
+</html>
